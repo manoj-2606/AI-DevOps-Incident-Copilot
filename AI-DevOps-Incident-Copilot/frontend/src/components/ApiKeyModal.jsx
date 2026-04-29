@@ -13,7 +13,7 @@ export default function ApiKeyModal({ onSave }) {
     return (
         <div style={styles.overlay}>
             <div style={styles.modal}>
-                <h2 style={styles.title}>Enter Your Anthropic API Key</h2>
+                <h2 style={styles.title}>Enter Your Groq API Key</h2>
                 <p style={styles.sub}>
                     Get your free key at console.groq.com — stored only in your browser.
                 </p>
