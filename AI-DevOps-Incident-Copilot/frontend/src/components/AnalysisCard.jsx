@@ -1,58 +1,81 @@
-const severityColor = {
-    LOW: '#22c55e',
-    MEDIUM: '#f59e0b',
-    HIGH: '#f97316',
-    CRITICAL: '#ef4444'
+const sev = {
+    LOW: { color: '#22c55e', bg: '#052010', border: '#22c55e20' },
+    MEDIUM: { color: '#f59e0b', bg: '#1a1000', border: '#f59e0b20' },
+    HIGH: { color: '#f97316', bg: '#1a0a00', border: '#f97316020' },
+    CRITICAL: { color: '#ef4444', bg: '#1a0000', border: '#ef444420' }
 }
 
 export default function AnalysisCard({ result }) {
     if (!result) return null
-
-    const color = severityColor[result.severity] || '#888'
+    const s = sev[result.severity] || sev.MEDIUM
 
     return (
-        <div style={styles.card}>
-            <div style={styles.header}>
-                <span style={styles.label}>Analysis Result</span>
-                <span style={{ ...styles.badge, background: color }}>
+        <div style={{ ...styles.card, borderColor: s.border, background: '#0d0d0d' }}>
+
+            {/* Top bar */}
+            <div style={styles.topBar}>
+                <div style={styles.titleRow}>
+                    <div style={{ ...styles.sevDot, background: s.color, boxShadow: `0 0 10px ${s.color}` }} />
+                    <span style={styles.cardTitle}>Analysis Result</span>
+                </div>
+                <span style={{ ...styles.badge, color: s.color, background: s.bg, borderColor: s.border }}>
                     {result.severity}
                 </span>
             </div>
 
+            {/* Root Cause */}
             <div style={styles.section}>
-                <p style={styles.sectionLabel}>Root Cause</p>
+                <div style={styles.sectionLabel}>ROOT CAUSE</div>
                 <p style={styles.sectionText}>{result.root_cause}</p>
             </div>
 
             <div style={styles.divider} />
 
+            {/* Fix */}
             <div style={styles.section}>
-                <p style={styles.sectionLabel}>Recommended Fix</p>
+                <div style={styles.sectionLabel}>RECOMMENDED FIX</div>
                 <p style={styles.sectionText}>{result.fix}</p>
             </div>
+
         </div>
     )
 }
 
 const styles = {
     card: {
-        background: '#1a1a2e', border: '1px solid #333',
-        borderRadius: 12, padding: 24, marginTop: 24
+        position: 'relative', zIndex: 1,
+        border: '1px solid #1a1a1a',
+        borderRadius: 16, overflow: 'hidden',
+        marginTop: 16
     },
-    header: {
+    topBar: {
         display: 'flex', justifyContent: 'space-between',
-        alignItems: 'center', marginBottom: 20
+        alignItems: 'center',
+        padding: '18px 24px',
+        borderBottom: '1px solid #1a1a1a'
     },
-    label: { color: '#fff', fontSize: 16, fontWeight: 700 },
+    titleRow: { display: 'flex', alignItems: 'center', gap: 10 },
+    sevDot: { width: 8, height: 8, borderRadius: '50%' },
+    cardTitle: {
+        fontFamily: "'Syne', sans-serif",
+        fontSize: 15, fontWeight: 700, color: '#fff'
+    },
     badge: {
-        padding: '4px 12px', borderRadius: 20,
-        color: '#fff', fontSize: 12, fontWeight: 700
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 10, fontWeight: 600,
+        letterSpacing: 2, padding: '5px 12px',
+        borderRadius: 6, border: '1px solid'
     },
-    section: { marginBottom: 16 },
+    section: { padding: '20px 24px' },
     sectionLabel: {
-        color: '#888', fontSize: 12,
-        fontWeight: 600, letterSpacing: 1, marginBottom: 6
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 9, letterSpacing: 3,
+        color: '#333', marginBottom: 12
     },
-    sectionText: { color: '#e0e0e0', fontSize: 14, lineHeight: 1.6, margin: 0 },
-    divider: { borderTop: '1px solid #2a2a3e', margin: '16px 0' }
+    sectionText: {
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 13, color: '#aaa',
+        lineHeight: 1.8, margin: 0
+    },
+    divider: { borderTop: '1px solid #1a1a1a', margin: '0 24px' }
 }

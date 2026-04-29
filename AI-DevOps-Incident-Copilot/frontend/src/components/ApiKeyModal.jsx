@@ -13,9 +13,11 @@ export default function ApiKeyModal({ onSave }) {
     return (
         <div style={styles.overlay}>
             <div style={styles.modal}>
-                <h2 style={styles.title}>Enter Your Groq API Key</h2>
+                <div style={styles.tag}>SETUP REQUIRED</div>
+                <h2 style={styles.title}>Connect your<br />AI engine</h2>
                 <p style={styles.sub}>
-                    Get your free key at console.groq.com — stored only in your browser.
+                    Get a free key at <span style={styles.link}>console.groq.com</span><br />
+                    Stored locally. Never touches our servers.
                 </p>
                 <input
                     type="password"
@@ -24,9 +26,15 @@ export default function ApiKeyModal({ onSave }) {
                     onChange={e => setKey(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSave()}
                     style={styles.input}
+                    autoFocus
                 />
-                <button onClick={handleSave} style={styles.button}>
-                    Save & Continue
+                <button
+                    onClick={handleSave}
+                    style={styles.button}
+                    onMouseEnter={e => e.target.style.background = '#00e5b3'}
+                    onMouseLeave={e => e.target.style.background = '#00ffc8'}
+                >
+                    Initialize →
                 </button>
             </div>
         </div>
@@ -36,24 +44,53 @@ export default function ApiKeyModal({ onSave }) {
 const styles = {
     overlay: {
         position: 'fixed', inset: 0,
-        background: 'rgba(0,0,0,0.7)',
+        background: 'rgba(0,0,0,0.85)',
+        backdropFilter: 'blur(8px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         zIndex: 100
     },
     modal: {
-        background: '#1a1a2e', border: '1px solid #333',
-        borderRadius: 12, padding: 32, width: 420, maxWidth: '90vw'
+        background: '#0d0d0d',
+        border: '1px solid #1e1e1e',
+        borderRadius: 16, padding: '40px 36px',
+        width: 440, maxWidth: '90vw',
+        boxShadow: '0 0 80px rgba(0,255,200,0.06)'
     },
-    title: { color: '#fff', marginBottom: 8, fontSize: 20 },
-    sub: { color: '#888', fontSize: 13, marginBottom: 20 },
+    tag: {
+        display: 'inline-block',
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 10, letterSpacing: 3,
+        color: '#00ffc8', marginBottom: 20,
+        padding: '4px 10px',
+        border: '1px solid #00ffc820',
+        borderRadius: 4
+    },
+    title: {
+        fontFamily: "'Syne', sans-serif",
+        fontSize: 32, fontWeight: 800,
+        color: '#fff', margin: '0 0 16px',
+        lineHeight: 1.15
+    },
+    sub: {
+        fontFamily: "'JetBrains Mono', monospace",
+        color: '#555', fontSize: 12,
+        lineHeight: 1.8, marginBottom: 28
+    },
+    link: { color: '#00ffc8' },
     input: {
-        width: '100%', padding: '10px 14px', borderRadius: 8,
-        border: '1px solid #444', background: '#0f0f1a',
-        color: '#fff', fontSize: 14, boxSizing: 'border-box', marginBottom: 16
+        width: '100%', padding: '14px 16px',
+        borderRadius: 8, border: '1px solid #222',
+        background: '#111', color: '#fff',
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 13, boxSizing: 'border-box',
+        marginBottom: 16, outline: 'none'
     },
     button: {
-        width: '100%', padding: '11px 0', borderRadius: 8,
-        background: '#4f46e5', color: '#fff', border: 'none',
-        fontSize: 15, cursor: 'pointer', fontWeight: 600
+        width: '100%', padding: '14px 0',
+        borderRadius: 8, background: '#00ffc8',
+        color: '#000', border: 'none',
+        fontFamily: "'Syne', sans-serif",
+        fontSize: 15, fontWeight: 700,
+        cursor: 'pointer', transition: 'background 0.2s'
     }
 }
