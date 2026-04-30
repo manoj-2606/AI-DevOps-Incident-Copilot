@@ -16,6 +16,52 @@ const TYPEWRITER_LINES = [
     '##[section]Finishing: Build and Deploy Pipeline',
 ]
 
+// Tool logos as SVG paths
+const TOOL_LOGOS = {
+    terraform: (
+        <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+            <path d="M12.042 7.172L20.04 11.742V20.88L12.042 16.31V7.172Z" fill="#7B42BC" />
+            <path d="M21.042 11.742L29.04 7.172V16.31L21.042 20.88V11.742Z" fill="#7B42BC" opacity="0.7" />
+            <path d="M2.96 2.602L10.958 7.172V16.31L2.96 11.74V2.602Z" fill="#7B42BC" opacity="0.5" />
+            <path d="M12.042 18.43L20.04 23V23L12.042 27.57V18.43Z" fill="#7B42BC" opacity="0.8" />
+        </svg>
+    ),
+    kubernetes: (
+        <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="14" stroke="#326CE5" strokeWidth="1.5" fill="none" />
+            <path d="M16 6L18.5 13H25L19.5 17L22 24L16 20L10 24L12.5 17L7 13H13.5L16 6Z" fill="#326CE5" opacity="0.8" />
+        </svg>
+    ),
+    docker: (
+        <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+            <rect x="4" y="12" width="5" height="4" rx="0.5" fill="#2496ED" />
+            <rect x="10" y="12" width="5" height="4" rx="0.5" fill="#2496ED" />
+            <rect x="16" y="12" width="5" height="4" rx="0.5" fill="#2496ED" />
+            <rect x="10" y="7" width="5" height="4" rx="0.5" fill="#2496ED" opacity="0.7" />
+            <rect x="16" y="7" width="5" height="4" rx="0.5" fill="#2496ED" opacity="0.7" />
+            <path d="M27 14.5C27 14.5 25.5 13.5 23.5 14C23 12 21.5 11 21.5 11C21.5 11 21 13 22 14.5C21 14.7 4 14.5 4 14.5C4 14.5 3.5 19 7 20.5C10 21.8 14 21.5 16 21.5C21 21.5 25.5 20 27 14.5Z" fill="#2496ED" />
+        </svg>
+    ),
+    azure: (
+        <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+            <path d="M14 4L4 28H10L14 18L20 28H28L18 4H14Z" fill="#0078D4" />
+            <path d="M18 4L28 28H22L18 18L12 28H4L14 4H18Z" fill="#0078D4" opacity="0.6" />
+        </svg>
+    ),
+    github: (
+        <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+            <path d="M16 3C8.82 3 3 8.82 3 16C3 21.72 6.58 26.58 11.66 28.34C12.26 28.44 12.5 28.08 12.5 27.76V25.52C9.04 26.26 8.34 24 8.34 24C7.8 22.62 7.02 22.26 7.02 22.26C5.94 21.52 7.1 21.54 7.1 21.54C8.3 21.62 8.94 22.76 8.94 22.76C10 24.58 11.82 24.04 12.54 23.72C12.64 22.96 12.96 22.42 13.3 22.12C10.5 21.82 7.56 20.74 7.56 15.9C7.56 14.58 8.02 13.5 8.96 12.64C8.84 12.34 8.44 11.1 9.08 9.44C9.08 9.44 10.08 9.12 12.5 10.68C13.62 10.38 14.8 10.22 16 10.22C17.2 10.22 18.38 10.38 19.5 10.68C21.92 9.12 22.92 9.44 22.92 9.44C23.56 11.1 23.16 12.34 23.04 12.64C23.98 13.5 24.44 14.58 24.44 15.9C24.44 20.76 21.5 21.82 18.68 22.1C19.12 22.48 19.5 23.24 19.5 24.4V27.76C19.5 28.08 19.74 28.44 20.34 28.34C25.42 26.58 29 21.72 29 16C29 8.82 23.18 3 16 3Z" fill="#ffffff" opacity="0.8" />
+        </svg>
+    ),
+    helm: (
+        <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="12" stroke="#0F1689" strokeWidth="1.5" fill="#0F1689" opacity="0.2" />
+            <path d="M16 8L16 24M8 16L24 16M11 11L21 21M21 11L11 21" stroke="#0F1689" strokeWidth="1.5" strokeLinecap="round" opacity="0.9" />
+            <circle cx="16" cy="16" r="3" fill="#0F1689" />
+        </svg>
+    ),
+}
+
 function StatusDot({ status, idle }) {
     const c = { success: '#22c55e', running: '#3b82f6', failed: '#ef4444', warning: '#f59e0b', idle: '#333' }[status] || '#333'
     return (
@@ -29,12 +75,13 @@ function StatusDot({ status, idle }) {
     )
 }
 
-function PipelineFlow({ activeStep, done, severity }) {
+function PipelineFlow({ activeStep, done, severity, loading, idle }) {
     const steps = ['Ingest', 'Analyze', 'Classify', 'Fix']
     const sevColor = severity ? SEV_COLOR[severity] : null
 
     const getStepState = (i) => {
         if (done) return 'done'
+        if (activeStep < 0) return 'idle'
         if (i < activeStep) return 'done'
         if (i === activeStep) return 'active'
         return 'idle'
@@ -49,7 +96,7 @@ function PipelineFlow({ activeStep, done, severity }) {
         return '#1a1a1a'
     }
 
-    const textColor = (state) => state !== 'idle' ? '#fff' : '#333'
+    const textColor = (state) => state !== 'idle' ? '#fff' : '#2a2a2a'
 
     return (
         <div style={pf.wrapper}>
@@ -63,12 +110,13 @@ function PipelineFlow({ activeStep, done, severity }) {
                             <div style={{
                                 ...pf.node,
                                 background: bg,
-                                borderColor: state === 'idle' ? '#2a2a2a' : bg,
+                                borderColor: state === 'idle' ? '#222' : bg,
                                 boxShadow: state === 'active'
                                     ? `0 0 20px ${bg}90, 0 0 40px ${bg}40`
                                     : state === 'done' ? `0 0 10px ${bg}50` : 'none',
                                 transform: state === 'active' ? 'scale(1.1)' : 'scale(1)',
-                                animation: state === 'active' ? 'nodePulse 1.4s ease-in-out infinite' : 'none'
+                                animation: state === 'active' ? 'nodePulse 1.4s ease-in-out infinite'
+                                    : idle ? `idleNodePulse ${1.5 + i * 0.4}s ease-in-out infinite` : 'none'
                             }}>
                                 <span style={{ ...pf.nodeText, color: textColor(state) }}>{step}</span>
                                 {state === 'active' && <span style={pf.activeDot} />}
@@ -77,12 +125,12 @@ function PipelineFlow({ activeStep, done, severity }) {
                                 <div style={pf.arrowWrap}>
                                     <div style={{
                                         ...pf.arrowLine,
-                                        background: i < activeStep || done ? '#22c55e' : '#222',
+                                        background: (i < activeStep || done) ? '#22c55e' : '#1e1e1e',
                                         transition: 'background 0.6s ease'
                                     }} />
                                     <div style={{
                                         ...pf.arrowHead,
-                                        borderLeftColor: i < activeStep || done ? '#22c55e' : '#222',
+                                        borderLeftColor: (i < activeStep || done) ? '#22c55e' : '#1e1e1e',
                                         transition: 'border-color 0.6s ease'
                                     }} />
                                     {state === 'active' && <div style={pf.flowDot} />}
@@ -92,6 +140,7 @@ function PipelineFlow({ activeStep, done, severity }) {
                     )
                 })}
             </div>
+
             {done && severity && (
                 <div style={{
                     ...pf.resultBadge,
@@ -103,9 +152,28 @@ function PipelineFlow({ activeStep, done, severity }) {
                     ● {severity} — Analysis Complete
                 </div>
             )}
-            {!done && activeStep >= 0 && (
+            {loading && activeStep >= 0 && (
                 <div style={pf.statusText}>
-                    {['Ingesting log data...', 'Running AI analysis...', 'Classifying severity...', 'Generating fix...'][activeStep]}
+                    {['Ingesting log data...', 'Running AI analysis...', 'Classifying severity...', 'Generating fix...'][Math.min(activeStep, 3)]}
+                </div>
+            )}
+            {idle && <div style={pf.idleText}>Ready · Awaiting log input</div>}
+            {idle && (
+                <div style={pf.idleCards}>
+                    {[
+                        ['ACR Auth', 'docker login failures', TOOL_LOGOS.docker, '#2496ED'],
+                        ['Terraform', 'state lock errors', TOOL_LOGOS.terraform, '#7B42BC'],
+                        ['Kubernetes', 'pod crash loops', TOOL_LOGOS.kubernetes, '#326CE5'],
+                        ['GitHub Actions', 'workflow failures', TOOL_LOGOS.github, '#e2e8f0'],
+                    ].map(([title, desc, logo, color]) => (
+                        <div key={title} style={pf.idleCard}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                                {logo}
+                                <span style={{ ...pf.idleCardTitle, color }}>{title}</span>
+                            </div>
+                            <span style={pf.idleCardDesc}>{desc}</span>
+                        </div>
+                    ))}
                 </div>
             )}
         </div>
@@ -149,7 +217,12 @@ const pf = {
         letterSpacing: 1, textAlign: 'center',
         fontFamily: "'JetBrains Mono', monospace",
         animation: 'textFade 1.5s ease-in-out infinite'
-    }
+    },
+    idleText: { marginTop: 10, fontSize: 9, color: '#333', letterSpacing: 2, textAlign: 'center', fontFamily: "'JetBrains Mono', monospace" },
+    idleCards: { marginTop: 14, display: 'flex', flexDirection: 'column', gap: 6, padding: '0 4px' },
+    idleCard: { display: 'flex', flexDirection: 'column', gap: 4, padding: '10px 14px', background: '#111', border: '1px solid #2a2a2a', borderRadius: 6 },
+    idleCardTitle: { fontSize: 12, color: '#ccc', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" },
+    idleCardDesc: { fontSize: 11, color: '#666', fontFamily: "'JetBrains Mono', monospace" }
 }
 
 function TypewriterPlaceholder() {
@@ -161,10 +234,8 @@ function TypewriterPlaceholder() {
     useEffect(() => {
         if (phase === 'typing') {
             if (lineIndex >= TYPEWRITER_LINES.length) {
-                setTimeout(() => {
-                    setPhase('clearing')
-                }, 2000)
-                return
+                const t = setTimeout(() => setPhase('clearing'), 2000)
+                return () => clearTimeout(t)
             }
             if (charIndex < TYPEWRITER_LINES[lineIndex].length) {
                 const t = setTimeout(() => {
@@ -279,8 +350,7 @@ const lv = {
     scanLine: {
         position: 'absolute', left: 0, right: 0, height: 2,
         background: 'linear-gradient(90deg, transparent, #3b82f690, #3b82f6, #3b82f690, transparent)',
-        animation: 'scanMove 2s linear infinite',
-        boxShadow: '0 0 12px #3b82f660'
+        animation: 'scanMove 2s linear infinite', boxShadow: '0 0 12px #3b82f660'
     },
     scanGlow: {
         position: 'absolute', left: 0, right: 0, height: 80,
@@ -291,7 +361,7 @@ const lv = {
         width: 56, background: '#0a0a0a', borderRight: '1px solid #2a2a2a',
         overflowY: 'hidden', flexShrink: 0, paddingTop: 16, userSelect: 'none'
     },
-    num: { fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: '#555', textAlign: 'right', paddingRight: 14, lineHeight: '24px', height: 24 },
+    num: { fontFamily: "'JetBrains Mono', monospace", fontSize: 13, textAlign: 'right', paddingRight: 14, lineHeight: '24px', height: 24 },
     editorWrapper: { flex: 1, position: 'relative', overflow: 'hidden' },
     display: {
         position: 'absolute', inset: 0, padding: '16px 20px',
@@ -301,11 +371,27 @@ const lv = {
     displayLine: { height: 24, whiteSpace: 'pre-wrap', wordBreak: 'break-all' },
     textarea: {
         position: 'absolute', inset: 0, width: '100%', height: '100%',
-        background: 'transparent', color: value => value ? 'transparent' : '#00000001',
+        background: 'transparent', color: 'transparent',
         caretColor: '#fff', border: 'none', outline: 'none', resize: 'none',
         fontFamily: "'JetBrains Mono', monospace", fontSize: 13, lineHeight: '24px',
         padding: '16px 20px', boxSizing: 'border-box', overflowY: 'auto'
     }
+}
+
+// Product logo SVG
+function ProductLogo() {
+    return (
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect width="28" height="28" rx="6" fill="#0d1117" />
+            <rect width="28" height="28" rx="6" stroke="#2a2a2a" strokeWidth="1" />
+            {/* Terminal prompt */}
+            <path d="M6 10L11 14L6 18" stroke="#00ffc8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            {/* Pipeline bars */}
+            <rect x="14" y="10" width="8" height="2" rx="1" fill="#3b82f6" />
+            <rect x="14" y="14" width="6" height="2" rx="1" fill="#3b82f6" opacity="0.7" />
+            <rect x="14" y="18" width="8" height="2" rx="1" fill="#3b82f6" opacity="0.4" />
+        </svg>
+    )
 }
 
 export default function Home() {
@@ -344,7 +430,10 @@ export default function Home() {
     }
 
     const handleAnalyze = async () => {
-        setError(''); setResult(null); setLoading(true); setActiveTab('logs')
+        setError('')
+        setResult(null)
+        setLoading(true)
+        // Don't switch tab — keep logs visible during analysis
         try {
             const res = await fetch('/api/analyze', {
                 method: 'POST',
@@ -356,7 +445,8 @@ export default function Home() {
             setResult(data)
             setPipelineStep(4)
             saveIncident({ root_cause: data.root_cause, fix: data.fix, severity: data.severity, log_preview: log.slice(0, 120) })
-            setTimeout(() => setActiveTab('analysis'), 600)
+            // Switch to analysis only after done
+            setActiveTab('analysis')
         } catch (e) {
             setError(e.message || 'Something went wrong')
             setPipelineStep(-1)
@@ -376,7 +466,7 @@ export default function Home() {
     const sevBg = result ? SEV_BG[result.severity] : null
     const lineCount = log ? log.split('\n').length : 0
     const flowDone = !!result && pipelineStep === 4
-    const isIdle = !loading && !result && !log
+    const isIdle = !loading && !result
 
     return (
         <div style={s.page}>
@@ -387,6 +477,10 @@ export default function Home() {
           0%,100%{box-shadow:0 0 20px #3b82f690,0 0 40px #3b82f640}
           50%{box-shadow:0 0 30px #3b82f6aa,0 0 60px #3b82f660}
         }
+        @keyframes idleNodePulse {
+          0%,100%{border-color:#1e1e1e;box-shadow:none}
+          50%{border-color:#2a2a2a;box-shadow:0 0 8px #ffffff06}
+        }
         @keyframes dotBlink { 0%,100%{opacity:1;transform:translateX(-50%) scale(1)} 50%{opacity:0.2;transform:translateX(-50%) scale(0.5)} }
         @keyframes flowMove { from{left:0} to{left:calc(100% - 6px)} }
         @keyframes scanMove { from{top:-2px} to{top:100%} }
@@ -394,17 +488,13 @@ export default function Home() {
         @keyframes badgePop { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
         @keyframes cursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
         @keyframes idlePulse {
-          0%,100%{box-shadow:0 0 4px #22c55e40; background:#22c55e60}
-          50%{box-shadow:0 0 12px #22c55e80; background:#22c55e}
+          0%,100%{box-shadow:0 0 4px #22c55e40;background:#22c55e60}
+          50%{box-shadow:0 0 12px #22c55e80;background:#22c55e}
         }
         @keyframes gradientRotate {
           0%{background-position:0% 50%}
           50%{background-position:100% 50%}
           100%{background-position:0% 50%}
-        }
-        @keyframes borderGlow {
-          0%,100%{box-shadow:0 0 8px #00ffc830, 0 2px 20px #00ffc820}
-          50%{box-shadow:0 0 20px #00ffc860, 0 2px 30px #00ffc840}
         }
         .crumb-link { text-decoration:none; transition:color 0.15s; }
         .crumb-link:hover { color:#fff !important; }
@@ -421,6 +511,7 @@ export default function Home() {
             {/* Top nav */}
             <div style={s.topBar}>
                 <div style={s.topLeft}>
+                    <ProductLogo />
                     <StatusDot
                         status={result ? (result.severity === 'CRITICAL' || result.severity === 'HIGH' ? 'failed' : 'success') : loading ? 'running' : 'idle'}
                         idle={isIdle}
@@ -439,27 +530,37 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* Summary strip */}
+            {/* Summary strip with tool logos */}
             <div style={s.strip}>
                 {[
-                    ['AGENT', 'Groq · llama-3.3-70b'],
-                    ['SOURCE', 'Azure DevOps / GitHub Actions'],
+                    ['AI AGENT', 'llama-3.3-70b', null, null],
+                    ['SOURCE', 'Azure DevOps / GitHub Actions', null, null],
                     ['STATUS', loading ? `Analyzing · ${elapsed}s` : result ? result.severity : 'Awaiting log',
-                        loading ? '#60a5fa' : result ? sevColor : '#888'],
-                    ['BYOK', 'Enabled', '#4ade80'],
-                    ['LINES', lineCount > 0 ? `${lineCount} lines` : '—']
+                        loading ? '#60a5fa' : result ? sevColor : '#888', null],
+                    ['BYOK', 'Enabled', '#4ade80', null],
+                    ['LINES', lineCount > 0 ? `${lineCount} lines` : '—', null, null]
                 ].map(([label, val, color]) => (
                     <div key={label} style={s.stripItem}>
                         <span style={s.stripLabel}>{label}</span>
                         <span style={{ ...s.stripVal, color: color || '#e2e8f0' }}>{val}</span>
                     </div>
                 ))}
+
+                {/* Tool logos section */}
+                <div style={s.toolLogos}>
+                    <span style={s.toolLogosLabel}>INTEGRATES WITH</span>
+                    <div style={s.toolLogosRow}>
+                        {Object.entries(TOOL_LOGOS).map(([name, svg]) => (
+                            <div key={name} title={name} style={s.toolLogo}>
+                                {svg}
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             {/* Main */}
             <div style={s.main}>
-
-                {/* Sidebar */}
                 <div style={s.sidebar}>
                     <div style={s.sideLabel}>PIPELINE JOBS</div>
                     {[
@@ -475,9 +576,13 @@ export default function Home() {
                         </div>
                     ))}
 
-                    {(loading || result) && (
-                        <PipelineFlow activeStep={pipelineStep} done={flowDone} severity={result?.severity} />
-                    )}
+                    <PipelineFlow
+                        activeStep={pipelineStep}
+                        done={flowDone}
+                        severity={result?.severity}
+                        loading={loading}
+                        idle={isIdle}
+                    />
 
                     <div style={{ flex: 1 }} />
 
@@ -500,10 +605,7 @@ export default function Home() {
                     <div style={{ height: 16 }} />
                 </div>
 
-                {/* Panel */}
                 <div style={s.panel}>
-
-                    {/* Instruction bar */}
                     <div style={s.instructionBar}>
                         <div style={s.instructionLeft}>
                             <span style={s.instructionStep}>01</span>
@@ -515,26 +617,17 @@ export default function Home() {
                         </div>
                     </div>
 
-                    {/* Action bar */}
                     <div style={s.actionBar}>
                         <div style={s.actionLeft}>
                             {lineCount > 0 && <span style={s.lineCountBadge}>{lineCount} lines · {log.length} chars</span>}
                         </div>
                         <div style={s.actionRight}>
-                            <button
-                                className="clear-btn"
-                                onClick={() => { setLog(''); setResult(null); setError(''); setActiveTab('logs'); setPipelineStep(-1) }}
-                                style={s.clearBtn}
-                            >
+                            <button className="clear-btn" onClick={() => { setLog(''); setResult(null); setError(''); setActiveTab('logs'); setPipelineStep(-1) }} style={s.clearBtn}>
                                 ✕ Clear
                             </button>
-
-                            {/* Animated gradient border wrapper when log is ready */}
                             <div style={{
                                 borderRadius: 7, padding: 1.5,
-                                background: log.trim() && !loading
-                                    ? 'linear-gradient(90deg, #00ffc8, #3b82f6, #a855f7, #00ffc8)'
-                                    : 'transparent',
+                                background: log.trim() && !loading ? 'linear-gradient(90deg, #00ffc8, #3b82f6, #a855f7, #00ffc8)' : 'transparent',
                                 backgroundSize: '300% 300%',
                                 animation: log.trim() && !loading ? 'gradientRotate 2.5s ease infinite' : 'none',
                                 transition: 'all 0.3s'
@@ -547,34 +640,24 @@ export default function Home() {
                                         ...s.analyzeBtn,
                                         opacity: !log.trim() ? 0.4 : 1,
                                         cursor: loading || !log.trim() ? 'not-allowed' : 'pointer',
-                                        background: loading ? '#0d0d0d' : '#0a0a0a',
+                                        background: '#0a0a0a',
                                         color: loading ? '#60a5fa' : log.trim() ? '#00ffc8' : '#555',
-                                        border: 'none',
                                         boxShadow: log.trim() && !loading ? '0 0 20px #00ffc820' : 'none'
                                     }}
                                 >
-                                    {loading
-                                        ? <><span style={s.spinner} /> Analyzing · {elapsed}s</>
-                                        : '⚡ Run Analysis'
-                                    }
+                                    {loading ? <><span style={s.spinner} /> Analyzing · {elapsed}s</> : '⚡ Run Analysis'}
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    {/* Tabs */}
                     <div style={s.tabs}>
                         {['logs', 'analysis'].map(tab => (
-                            <button
-                                key={tab}
-                                className="tab-btn"
-                                onClick={() => setActiveTab(tab)}
-                                style={{
-                                    ...s.tab,
-                                    color: activeTab === tab ? '#ffffff' : '#555',
-                                    borderBottom: activeTab === tab ? '2px solid #3b82f6' : '2px solid transparent'
-                                }}
-                            >
+                            <button key={tab} className="tab-btn" onClick={() => setActiveTab(tab)} style={{
+                                ...s.tab,
+                                color: activeTab === tab ? '#ffffff' : '#555',
+                                borderBottom: activeTab === tab ? '2px solid #3b82f6' : '2px solid transparent'
+                            }}>
                                 {tab === 'logs' ? '📋 Logs' : '🔍 Analysis'}
                                 {tab === 'analysis' && result && (
                                     <span style={{ ...s.tabPill, background: sevBg, color: sevColor, borderColor: sevColor + '50' }}>
@@ -585,19 +668,16 @@ export default function Home() {
                         ))}
                     </div>
 
-                    {/* Log tab */}
-                    {activeTab === 'logs' && (
-                        <div style={s.logPane}>
-                            <LogViewer value={log} onChange={setLog} scanning={loading} />
-                            {error && (
-                                <div style={s.errorBar}>
-                                    <span style={{ color: '#f87171' }}>##[error]</span> {error}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                    {/* Always render log pane, hide with display:none when on analysis tab */}
+                    <div style={{ ...s.logPane, display: activeTab === 'logs' ? 'flex' : 'none' }}>
+                        <LogViewer value={log} onChange={setLog} scanning={loading} />
+                        {error && (
+                            <div style={s.errorBar}>
+                                <span style={{ color: '#f87171' }}>##[error]</span> {error}
+                            </div>
+                        )}
+                    </div>
 
-                    {/* Analysis tab */}
                     {activeTab === 'analysis' && (
                         <div style={s.analysisPane}>
                             {!result ? (
@@ -618,7 +698,7 @@ export default function Home() {
             </div>
 
             <div style={s.footer}>
-                <span style={s.footerText}>INCIDENT COPILOT · Groq AI · BYOK · Zero data retention · Local history</span>
+                <span style={s.footerText}>INCIDENT COPILOT · AI-Powered · BYOK · Zero data retention · Local history</span>
             </div>
         </div>
     )
@@ -634,7 +714,7 @@ const s = {
     },
     topBar: {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '12px 24px', background: '#111',
+        padding: '10px 24px', background: '#111',
         borderBottom: '1px solid #2a2a2a', flexShrink: 0
     },
     topLeft: { display: 'flex', alignItems: 'center', gap: 10 },
@@ -652,14 +732,27 @@ const s = {
     },
     strip: {
         display: 'flex', background: '#0d0d0d',
-        borderBottom: '1px solid #2a2a2a', flexShrink: 0
+        borderBottom: '1px solid #2a2a2a', flexShrink: 0, alignItems: 'stretch'
     },
     stripItem: {
         display: 'flex', flexDirection: 'column', gap: 4,
-        padding: '10px 24px', borderRight: '1px solid #2a2a2a', minWidth: 0
+        padding: '10px 20px', borderRight: '1px solid #2a2a2a', minWidth: 0
     },
     stripLabel: { fontSize: 9, color: '#555', letterSpacing: 3 },
     stripVal: { fontSize: 13, fontWeight: 600 },
+    toolLogos: {
+        display: 'flex', flexDirection: 'column', gap: 6,
+        padding: '8px 20px', marginLeft: 'auto', justifyContent: 'center'
+    },
+    toolLogosLabel: { fontSize: 9, color: '#333', letterSpacing: 3 },
+    toolLogosRow: { display: 'flex', gap: 10, alignItems: 'center' },
+    toolLogo: {
+        width: 28, height: 28, display: 'flex', alignItems: 'center',
+        justifyContent: 'center', borderRadius: 6,
+        background: '#111', border: '1px solid #1e1e1e',
+        transition: 'border-color 0.2s',
+        cursor: 'default'
+    },
     main: { display: 'flex', flex: 1, overflow: 'hidden', minHeight: 0 },
     sidebar: {
         width: 280, background: '#0d0d0d',
@@ -739,7 +832,7 @@ const s = {
         fontSize: 10, padding: '3px 8px', borderRadius: 3,
         letterSpacing: 1.5, border: '1px solid', fontWeight: 700
     },
-    logPane: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+    logPane: { flex: 1, flexDirection: 'column', overflow: 'hidden' },
     errorBar: {
         padding: '12px 20px', background: '#1a0808',
         borderTop: '1px solid #ef444430',
