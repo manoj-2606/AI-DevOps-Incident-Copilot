@@ -1,40 +1,65 @@
 const sev = {
-    LOW: { color: '#22c55e', bg: '#052010', border: '#22c55e20' },
-    MEDIUM: { color: '#f59e0b', bg: '#1a1000', border: '#f59e0b20' },
-    HIGH: { color: '#f97316', bg: '#1a0a00', border: '#f97316020' },
-    CRITICAL: { color: '#ef4444', bg: '#1a0000', border: '#ef444420' }
+    LOW: { color: '#22c55e', bg: '#052010', border: '#22c55e25' },
+    MEDIUM: { color: '#f59e0b', bg: '#1a1000', border: '#f59e0b25' },
+    HIGH: { color: '#f97316', bg: '#1a0800', border: '#f9731625' },
+    CRITICAL: { color: '#ef4444', bg: '#1a0000', border: '#ef444425' }
+}
+
+function StatusDot({ color }) {
+    return (
+        <span style={{
+            display: 'inline-block', width: 9, height: 9,
+            borderRadius: '50%', background: color,
+            boxShadow: `0 0 8px ${color}`, flexShrink: 0
+        }} />
+    )
 }
 
 export default function AnalysisCard({ result }) {
     if (!result) return null
     const s = sev[result.severity] || sev.MEDIUM
+    const fixSteps = result.fix
+        .split(/(?:\d+\.\s|\n|,\s(?=[A-Z]))/)
+        .map(s => s.trim())
+        .filter(Boolean)
 
     return (
-        <div style={{ ...styles.card, borderColor: s.border, background: '#0d0d0d' }}>
+        <div style={{ ...styles.card, borderColor: s.border }}>
 
-            {/* Top bar */}
-            <div style={styles.topBar}>
-                <div style={styles.titleRow}>
-                    <div style={{ ...styles.sevDot, background: s.color, boxShadow: `0 0 10px ${s.color}` }} />
-                    <span style={styles.cardTitle}>Analysis Result</span>
+            {/* Header */}
+            <div style={{ ...styles.header, borderBottomColor: s.border }}>
+                <div style={styles.headerLeft}>
+                    <StatusDot color={s.color} />
+                    <span style={styles.headerTitle}>Analysis Complete</span>
+                    <span style={styles.runId}>#{Date.now().toString().slice(-6)}</span>
                 </div>
-                <span style={{ ...styles.badge, color: s.color, background: s.bg, borderColor: s.border }}>
-                    {result.severity}
-                </span>
+                <div style={{ ...styles.badge, color: s.color, background: s.bg, borderColor: s.border }}>
+                    ● {result.severity}
+                </div>
             </div>
 
-            {/* Root Cause */}
-            <div style={styles.section}>
-                <div style={styles.sectionLabel}>ROOT CAUSE</div>
-                <p style={styles.sectionText}>{result.root_cause}</p>
+            {/* Root cause */}
+            <div style={styles.block}>
+                <div style={styles.blockLabel}>ROOT CAUSE</div>
+                <div style={styles.logLine}>
+                    <span style={styles.lineNum}>1</span>
+                    <span style={{ color: '#ef4444' }}>##[error]</span>
+                    <span style={styles.lineText}>{result.root_cause}</span>
+                </div>
             </div>
 
             <div style={styles.divider} />
 
-            {/* Fix */}
-            <div style={styles.section}>
-                <div style={styles.sectionLabel}>RECOMMENDED FIX</div>
-                <p style={styles.sectionText}>{result.fix}</p>
+            {/* Fix steps */}
+            <div style={styles.block}>
+                <div style={styles.blockLabel}>RECOMMENDED FIX</div>
+                {fixSteps.map((step, i) => (
+                    <div key={i} style={styles.logLine}>
+                        <span style={styles.lineNum}>{i + 1}</span>
+                        <span style={{ color: '#22c55e' }}>$</span>
+                        <span style={styles.lineText}>{step}</span>
+                    </div>
+                ))}
             </div>
 
         </div>
@@ -43,39 +68,52 @@ export default function AnalysisCard({ result }) {
 
 const styles = {
     card: {
-        position: 'relative', zIndex: 1,
-        border: '1px solid #1a1a1a',
-        borderRadius: 16, overflow: 'hidden',
-        marginTop: 16
+        border: '1px solid',
+        borderRadius: 8,
+        overflow: 'hidden',
+        marginTop: 0,
+        animation: 'fadeSlideIn 0.3s ease',
+        background: '#0d0d0d'
     },
-    topBar: {
-        display: 'flex', justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '18px 24px',
-        borderBottom: '1px solid #1a1a1a'
+    header: {
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '12px 16px', borderBottom: '1px solid',
+        background: '#111'
     },
-    titleRow: { display: 'flex', alignItems: 'center', gap: 10 },
-    sevDot: { width: 8, height: 8, borderRadius: '50%' },
-    cardTitle: {
-        fontFamily: "'Syne', sans-serif",
-        fontSize: 15, fontWeight: 700, color: '#fff'
+    headerLeft: { display: 'flex', alignItems: 'center', gap: 10 },
+    headerTitle: {
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 12, color: '#ccc', fontWeight: 600
+    },
+    runId: {
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 10, color: '#333'
     },
     badge: {
         fontFamily: "'JetBrains Mono', monospace",
-        fontSize: 10, fontWeight: 600,
-        letterSpacing: 2, padding: '5px 12px',
-        borderRadius: 6, border: '1px solid'
+        fontSize: 10, letterSpacing: 2,
+        padding: '4px 10px', borderRadius: 4,
+        border: '1px solid', fontWeight: 700
     },
-    section: { padding: '20px 24px' },
-    sectionLabel: {
+    block: { padding: '14px 0' },
+    blockLabel: {
         fontFamily: "'JetBrains Mono', monospace",
-        fontSize: 9, letterSpacing: 3,
-        color: '#333', marginBottom: 12
+        fontSize: 9, color: '#ccc', letterSpacing: 3,
+        padding: '0 16px', marginBottom: 10
     },
-    sectionText: {
-        fontFamily: "'JetBrains Mono', monospace",
-        fontSize: 13, color: '#aaa',
-        lineHeight: 1.8, margin: 0
+    logLine: {
+        display: 'flex', gap: 12, padding: '3px 16px',
+        alignItems: 'flex-start',
+        fontFamily: "'JetBrains Mono', monospace", fontSize: 12,
+        lineHeight: 1.7,
+        transition: 'background 0.15s'
     },
-    divider: { borderTop: '1px solid #1a1a1a', margin: '0 24px' }
+    lineNum: {
+        color: '#2a2a2a', minWidth: 24,
+        textAlign: 'right', userSelect: 'none',
+        fontSize: 11, paddingTop: 1
+    },
+    lineText: { color: '#d1d5db', flex: 1 },
+    detailText: { color: '#ccc' },
+    divider: { borderTop: '1px solid #1a1a1a', margin: '0 16px' },
 }
