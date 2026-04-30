@@ -7,9 +7,26 @@ import { Link } from 'react-router-dom'
 const SEV_COLOR = { LOW: '#22c55e', MEDIUM: '#f59e0b', HIGH: '#f97316', CRITICAL: '#ef4444' }
 const SEV_BG = { LOW: '#052010', MEDIUM: '#1a1000', HIGH: '#1a0800', CRITICAL: '#1a0000' }
 
-function StatusDot({ status }) {
-    const c = { success: '#22c55e', running: '#3b82f6', failed: '#ef4444', warning: '#f59e0b', idle: '#222' }[status] || '#222'
-    return <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: c, boxShadow: status !== 'idle' ? `0 0 8px ${c}` : 'none', flexShrink: 0, transition: 'all 0.4s' }} />
+const TYPEWRITER_LINES = [
+    '##[section]Starting: Build and Deploy Pipeline',
+    '##[command]docker build -f Dockerfile -t myapp:latest .',
+    '##[error]unauthorized: authentication required',
+    '##[error]docker push myregistry.azurecr.io/myapp failed',
+    '##[error]The process failed with exit code 1',
+    '##[section]Finishing: Build and Deploy Pipeline',
+]
+
+function StatusDot({ status, idle }) {
+    const c = { success: '#22c55e', running: '#3b82f6', failed: '#ef4444', warning: '#f59e0b', idle: '#333' }[status] || '#333'
+    return (
+        <span style={{
+            display: 'inline-block', width: 10, height: 10,
+            borderRadius: '50%', background: c, flexShrink: 0,
+            boxShadow: status !== 'idle' ? `0 0 8px ${c}` : 'none',
+            animation: idle ? 'idlePulse 3s ease-in-out infinite' : 'none',
+            transition: 'all 0.4s'
+        }} />
+    )
 }
 
 function PipelineFlow({ activeStep, done, severity }) {
@@ -32,11 +49,7 @@ function PipelineFlow({ activeStep, done, severity }) {
         return '#1a1a1a'
     }
 
-    const textColor = (state) => {
-        if (state === 'done') return '#fff'
-        if (state === 'active') return '#fff'
-        return '#333'
-    }
+    const textColor = (state) => state !== 'idle' ? '#fff' : '#333'
 
     return (
         <div style={pf.wrapper}>
@@ -51,8 +64,10 @@ function PipelineFlow({ activeStep, done, severity }) {
                                 ...pf.node,
                                 background: bg,
                                 borderColor: state === 'idle' ? '#2a2a2a' : bg,
-                                boxShadow: state === 'active' ? `0 0 16px ${bg}80, 0 0 32px ${bg}30` : state === 'done' ? `0 0 8px ${bg}40` : 'none',
-                                transform: state === 'active' ? 'scale(1.08)' : 'scale(1)',
+                                boxShadow: state === 'active'
+                                    ? `0 0 20px ${bg}90, 0 0 40px ${bg}40`
+                                    : state === 'done' ? `0 0 10px ${bg}50` : 'none',
+                                transform: state === 'active' ? 'scale(1.1)' : 'scale(1)',
                                 animation: state === 'active' ? 'nodePulse 1.4s ease-in-out infinite' : 'none'
                             }}>
                                 <span style={{ ...pf.nodeText, color: textColor(state) }}>{step}</span>
@@ -62,17 +77,15 @@ function PipelineFlow({ activeStep, done, severity }) {
                                 <div style={pf.arrowWrap}>
                                     <div style={{
                                         ...pf.arrowLine,
-                                        background: i < activeStep || done ? '#22c55e' : '#1e1e1e',
-                                        transition: 'background 0.5s ease'
+                                        background: i < activeStep || done ? '#22c55e' : '#222',
+                                        transition: 'background 0.6s ease'
                                     }} />
                                     <div style={{
                                         ...pf.arrowHead,
-                                        borderLeftColor: i < activeStep || done ? '#22c55e' : '#1e1e1e',
-                                        transition: 'border-color 0.5s ease'
+                                        borderLeftColor: i < activeStep || done ? '#22c55e' : '#222',
+                                        transition: 'border-color 0.6s ease'
                                     }} />
-                                    {state === 'active' && (
-                                        <div style={pf.flowDot} />
-                                    )}
+                                    {state === 'active' && <div style={pf.flowDot} />}
                                 </div>
                             )}
                         </div>
@@ -83,9 +96,9 @@ function PipelineFlow({ activeStep, done, severity }) {
                 <div style={{
                     ...pf.resultBadge,
                     background: SEV_BG[severity],
-                    borderColor: sevColor + '50',
+                    borderColor: sevColor + '60',
                     color: sevColor,
-                    animation: 'badgePop 0.4s ease'
+                    animation: 'badgePop 0.5s ease'
                 }}>
                     ● {severity} — Analysis Complete
                 </div>
@@ -100,71 +113,108 @@ function PipelineFlow({ activeStep, done, severity }) {
 }
 
 const pf = {
-    wrapper: {
-        padding: '16px 16px 20px',
-        borderTop: '1px solid #1a1a1a',
-        background: '#080808'
-    },
+    wrapper: { padding: '16px 16px 20px', borderTop: '1px solid #1a1a1a', background: '#080808' },
     label: { fontSize: 9, color: '#444', letterSpacing: 3, marginBottom: 16 },
-    flow: {
-        display: 'flex', alignItems: 'center',
-        justifyContent: 'center', gap: 0
-    },
+    flow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0 },
     stepGroup: { display: 'flex', alignItems: 'center' },
     node: {
         width: 52, height: 52, borderRadius: '50%',
-        border: '1.5px solid', display: 'flex',
-        flexDirection: 'column', alignItems: 'center',
-        justifyContent: 'center', position: 'relative',
+        border: '1.5px solid', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', position: 'relative',
         transition: 'all 0.4s ease', cursor: 'default', flexShrink: 0
     },
-    nodeText: {
-        fontSize: 9, fontWeight: 700, letterSpacing: 0.5,
-        fontFamily: "'JetBrains Mono', monospace"
-    },
+    nodeText: { fontSize: 9, fontWeight: 700, letterSpacing: 0.5, fontFamily: "'JetBrains Mono', monospace" },
     activeDot: {
-        position: 'absolute', bottom: -3, left: '50%',
-        transform: 'translateX(-50%)',
-        width: 5, height: 5, borderRadius: '50%',
-        background: '#3b82f6',
+        position: 'absolute', bottom: -4, left: '50%',
+        transform: 'translateX(-50%)', width: 5, height: 5,
+        borderRadius: '50%', background: '#3b82f6',
         animation: 'dotBlink 0.8s ease-in-out infinite'
     },
-    arrowWrap: {
-        display: 'flex', alignItems: 'center',
-        position: 'relative', width: 28, flexShrink: 0
-    },
-    arrowLine: {
-        height: 1.5, flex: 1,
-        transition: 'background 0.5s'
-    },
-    arrowHead: {
-        width: 0, height: 0,
-        borderTop: '4px solid transparent',
-        borderBottom: '4px solid transparent',
-        borderLeft: '6px solid',
-        transition: 'border-color 0.5s'
-    },
+    arrowWrap: { display: 'flex', alignItems: 'center', position: 'relative', width: 24, flexShrink: 0 },
+    arrowLine: { height: 1.5, flex: 1 },
+    arrowHead: { width: 0, height: 0, borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderLeft: '6px solid' },
     flowDot: {
-        position: 'absolute', left: 0,
-        width: 6, height: 6, borderRadius: '50%',
-        background: '#3b82f6',
-        boxShadow: '0 0 8px #3b82f6',
-        animation: 'flowMove 1s linear infinite'
+        position: 'absolute', left: 0, width: 6, height: 6,
+        borderRadius: '50%', background: '#3b82f6',
+        boxShadow: '0 0 8px #3b82f6', animation: 'flowMove 1s linear infinite'
     },
     resultBadge: {
-        marginTop: 14, padding: '7px 12px',
-        border: '1px solid', borderRadius: 6,
-        fontSize: 11, fontWeight: 700, letterSpacing: 1.5,
-        textAlign: 'center',
+        marginTop: 14, padding: '8px 12px', border: '1px solid',
+        borderRadius: 6, fontSize: 11, fontWeight: 700,
+        letterSpacing: 1.5, textAlign: 'center',
         fontFamily: "'JetBrains Mono', monospace"
     },
     statusText: {
-        marginTop: 12, fontSize: 10,
-        color: '#3b82f6', letterSpacing: 1,
-        textAlign: 'center',
+        marginTop: 12, fontSize: 10, color: '#3b82f6',
+        letterSpacing: 1, textAlign: 'center',
         fontFamily: "'JetBrains Mono', monospace",
         animation: 'textFade 1.5s ease-in-out infinite'
     }
+}
+
+function TypewriterPlaceholder() {
+    const [displayedLines, setDisplayedLines] = useState([''])
+    const [lineIndex, setLineIndex] = useState(0)
+    const [charIndex, setCharIndex] = useState(0)
+    const [phase, setPhase] = useState('typing')
+
+    useEffect(() => {
+        if (phase === 'typing') {
+            if (lineIndex >= TYPEWRITER_LINES.length) {
+                setTimeout(() => {
+                    setPhase('clearing')
+                }, 2000)
+                return
+            }
+            if (charIndex < TYPEWRITER_LINES[lineIndex].length) {
+                const t = setTimeout(() => {
+                    setDisplayedLines(prev => {
+                        const next = [...prev]
+                        next[lineIndex] = TYPEWRITER_LINES[lineIndex].slice(0, charIndex + 1)
+                        return next
+                    })
+                    setCharIndex(c => c + 1)
+                }, 28)
+                return () => clearTimeout(t)
+            } else {
+                const t = setTimeout(() => {
+                    setDisplayedLines(prev => [...prev, ''])
+                    setLineIndex(l => l + 1)
+                    setCharIndex(0)
+                }, 120)
+                return () => clearTimeout(t)
+            }
+        }
+        if (phase === 'clearing') {
+            const t = setTimeout(() => {
+                setDisplayedLines([''])
+                setLineIndex(0)
+                setCharIndex(0)
+                setPhase('typing')
+            }, 800)
+            return () => clearTimeout(t)
+        }
+    }, [phase, lineIndex, charIndex])
+
+    const getColor = (line) => {
+        if (line.includes('##[error]')) return '#f8717180'
+        if (line.includes('##[section]')) return '#60a5fa80'
+        if (line.includes('##[command]')) return '#4ade8080'
+        return '#33333380'
+    }
+
+    return (
+        <div style={{ padding: '16px 20px', fontFamily: "'JetBrains Mono', monospace", fontSize: 13, lineHeight: '24px' }}>
+            {displayedLines.map((line, i) => (
+                <div key={i} style={{ height: 24, color: getColor(line) }}>
+                    {line}
+                    {i === displayedLines.length - 1 && phase === 'typing' && (
+                        <span style={{ animation: 'cursorBlink 0.8s steps(1) infinite', color: '#3b82f680' }}>▋</span>
+                    )}
+                </div>
+            ))}
+        </div>
+    )
 }
 
 function LogViewer({ value, onChange, scanning }) {
@@ -189,35 +239,34 @@ function LogViewer({ value, onChange, scanning }) {
 
     return (
         <div style={{ ...lv.wrapper, position: 'relative' }}>
-            {/* Scan-line overlay when analyzing */}
             {scanning && (
                 <div style={lv.scanOverlay}>
                     <div style={lv.scanLine} />
                     <div style={lv.scanGlow} />
                 </div>
             )}
-
             <div ref={numRef} style={lv.nums}>
                 {(value ? lines : Array.from({ length: 20 })).map((_, i) => (
                     <div key={i} style={{ ...lv.num, color: value ? '#555' : '#222' }}>{i + 1}</div>
                 ))}
             </div>
             <div style={lv.editorWrapper}>
-                <div ref={displayRef} style={lv.display} aria-hidden="true">
-                    {value
-                        ? lines.map((line, i) => (
+                {!value && <TypewriterPlaceholder />}
+                {value && (
+                    <div ref={displayRef} style={lv.display} aria-hidden="true">
+                        {lines.map((line, i) => (
                             <div key={i} style={{ ...lv.displayLine, color: getLineColor(line) }}>{line || '\u00A0'}</div>
-                        ))
-                        : <div style={lv.placeholder}>{'##[section]Starting: Pipeline\n##[error]Paste your failed pipeline log here...\n##[error]Error: task failed\n##[section]Finishing: Build'}</div>
-                    }
-                </div>
+                        ))}
+                    </div>
+                )}
                 <textarea
                     ref={taRef}
                     value={value}
                     onChange={e => onChange(e.target.value)}
                     onScroll={syncScroll}
-                    style={lv.textarea}
+                    style={{ ...lv.textarea, opacity: value ? 1 : 0.01 }}
                     spellCheck={false}
+                    placeholder=""
                 />
             </div>
         </div>
@@ -226,31 +275,23 @@ function LogViewer({ value, onChange, scanning }) {
 
 const lv = {
     wrapper: { display: 'flex', flex: 1, overflow: 'hidden', background: '#060606' },
-    scanOverlay: {
-        position: 'absolute', inset: 0, zIndex: 10,
-        pointerEvents: 'none', overflow: 'hidden'
-    },
+    scanOverlay: { position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none', overflow: 'hidden' },
     scanLine: {
-        position: 'absolute', left: 0, right: 0,
-        height: 2, background: 'linear-gradient(90deg, transparent, #3b82f680, #3b82f6, #3b82f680, transparent)',
+        position: 'absolute', left: 0, right: 0, height: 2,
+        background: 'linear-gradient(90deg, transparent, #3b82f690, #3b82f6, #3b82f690, transparent)',
         animation: 'scanMove 2s linear infinite',
         boxShadow: '0 0 12px #3b82f660'
     },
     scanGlow: {
-        position: 'absolute', left: 0, right: 0,
-        height: 60,
-        background: 'linear-gradient(180deg, transparent, #3b82f608, transparent)',
-        animation: 'scanMove 2s linear infinite',
-        animationDelay: '-0.1s'
+        position: 'absolute', left: 0, right: 0, height: 80,
+        background: 'linear-gradient(180deg, transparent, #3b82f606, transparent)',
+        animation: 'scanMove 2s linear infinite', animationDelay: '-0.1s'
     },
     nums: {
         width: 56, background: '#0a0a0a', borderRight: '1px solid #2a2a2a',
         overflowY: 'hidden', flexShrink: 0, paddingTop: 16, userSelect: 'none'
     },
-    num: {
-        fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: '#555',
-        textAlign: 'right', paddingRight: 14, lineHeight: '24px', height: 24
-    },
+    num: { fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: '#555', textAlign: 'right', paddingRight: 14, lineHeight: '24px', height: 24 },
     editorWrapper: { flex: 1, position: 'relative', overflow: 'hidden' },
     display: {
         position: 'absolute', inset: 0, padding: '16px 20px',
@@ -258,11 +299,10 @@ const lv = {
         pointerEvents: 'none', overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all'
     },
     displayLine: { height: 24, whiteSpace: 'pre-wrap', wordBreak: 'break-all' },
-    placeholder: { color: '#333', whiteSpace: 'pre' },
     textarea: {
         position: 'absolute', inset: 0, width: '100%', height: '100%',
-        background: 'transparent', color: 'transparent', caretColor: '#fff',
-        border: 'none', outline: 'none', resize: 'none',
+        background: 'transparent', color: value => value ? 'transparent' : '#00000001',
+        caretColor: '#fff', border: 'none', outline: 'none', resize: 'none',
         fontFamily: "'JetBrains Mono', monospace", fontSize: 13, lineHeight: '24px',
         padding: '16px 20px', boxSizing: 'border-box', overflowY: 'auto'
     }
@@ -285,9 +325,7 @@ export default function Home() {
             setElapsed(0)
             setPipelineStep(0)
             timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000)
-            stepRef.current = setInterval(() => {
-                setPipelineStep(s => s < 3 ? s + 1 : 3)
-            }, 1200)
+            stepRef.current = setInterval(() => setPipelineStep(s => s < 3 ? s + 1 : 3), 1200)
         } else {
             clearInterval(timerRef.current)
             clearInterval(stepRef.current)
@@ -326,10 +364,19 @@ export default function Home() {
         setLoading(false)
     }
 
+    const handleResetKey = () => {
+        const existing = getApiKey()
+        const confirmed = window.confirm(
+            `Reset API Key?\n\nYour current key starts with: ${existing.slice(0, 14)}...\n\nCopy it now if you need it. This cannot be undone.`
+        )
+        if (confirmed) { clearApiKey(); setApiKey('') }
+    }
+
     const sevColor = result ? SEV_COLOR[result.severity] : null
     const sevBg = result ? SEV_BG[result.severity] : null
     const lineCount = log ? log.split('\n').length : 0
     const flowDone = !!result && pipelineStep === 4
+    const isIdle = !loading && !result && !log
 
     return (
         <div style={s.page}>
@@ -337,21 +384,34 @@ export default function Home() {
         @keyframes fadeSlideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
         @keyframes spin { to{transform:rotate(360deg)} }
         @keyframes nodePulse {
-          0%,100%{box-shadow:0 0 16px #3b82f680,0 0 32px #3b82f630}
-          50%{box-shadow:0 0 24px #3b82f6aa,0 0 48px #3b82f650}
+          0%,100%{box-shadow:0 0 20px #3b82f690,0 0 40px #3b82f640}
+          50%{box-shadow:0 0 30px #3b82f6aa,0 0 60px #3b82f660}
         }
-        @keyframes dotBlink { 0%,100%{opacity:1;transform:translateX(-50%) scale(1)} 50%{opacity:0.3;transform:translateX(-50%) scale(0.6)} }
+        @keyframes dotBlink { 0%,100%{opacity:1;transform:translateX(-50%) scale(1)} 50%{opacity:0.2;transform:translateX(-50%) scale(0.5)} }
         @keyframes flowMove { from{left:0} to{left:calc(100% - 6px)} }
         @keyframes scanMove { from{top:-2px} to{top:100%} }
-        @keyframes textFade { 0%,100%{opacity:0.5} 50%{opacity:1} }
-        @keyframes badgePop { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
-        @keyframes shimmer { from{background-position:200% 0} to{background-position:-200% 0} }
+        @keyframes textFade { 0%,100%{opacity:0.4} 50%{opacity:1} }
+        @keyframes badgePop { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
+        @keyframes cursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes idlePulse {
+          0%,100%{box-shadow:0 0 4px #22c55e40; background:#22c55e60}
+          50%{box-shadow:0 0 12px #22c55e80; background:#22c55e}
+        }
+        @keyframes gradientRotate {
+          0%{background-position:0% 50%}
+          50%{background-position:100% 50%}
+          100%{background-position:0% 50%}
+        }
+        @keyframes borderGlow {
+          0%,100%{box-shadow:0 0 8px #00ffc830, 0 2px 20px #00ffc820}
+          50%{box-shadow:0 0 20px #00ffc860, 0 2px 30px #00ffc840}
+        }
         .crumb-link { text-decoration:none; transition:color 0.15s; }
         .crumb-link:hover { color:#fff !important; }
         .job-row:hover { background:#ffffff06 !important; }
         textarea::-webkit-scrollbar { width:4px; }
         textarea::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:2px; }
-        .analyze-btn:hover:not(:disabled) { background:#00e5b3 !important; transform:translateY(-1px); box-shadow:0 4px 20px #00ffc840 !important; }
+        .analyze-btn:hover:not(:disabled) { background:#00e5b3 !important; transform:translateY(-1px) !important; }
         .clear-btn:hover { border-color:#555 !important; color:#fff !important; }
         .tab-btn:hover { color:#aaa !important; }
       `}</style>
@@ -361,7 +421,10 @@ export default function Home() {
             {/* Top nav */}
             <div style={s.topBar}>
                 <div style={s.topLeft}>
-                    <StatusDot status={result ? (result.severity === 'CRITICAL' || result.severity === 'HIGH' ? 'failed' : 'success') : loading ? 'running' : 'idle'} />
+                    <StatusDot
+                        status={result ? (result.severity === 'CRITICAL' || result.severity === 'HIGH' ? 'failed' : 'success') : loading ? 'running' : 'idle'}
+                        idle={isIdle}
+                    />
                     <Link to="/" className="crumb-link" style={s.orgName}>incident-copilot</Link>
                     <span style={s.slash}>/</span>
                     <span style={s.crumb}>Pipelines</span>
@@ -372,13 +435,7 @@ export default function Home() {
                 </div>
                 <div style={s.topRight}>
                     <Link to="/history" style={s.topBtn}>History</Link>
-                    <button onClick={() => {
-                        const existing = getApiKey()
-                        const confirmed = window.confirm(
-                            `Reset API Key?\n\nYour current key starts with: ${existing.slice(0, 12)}...\n\nCopy it first if you need it. This cannot be undone.`
-                        )
-                        if (confirmed) { clearApiKey(); setApiKey('') }
-                    }} style={s.topBtn}>Reset Key</button>
+                    <button onClick={handleResetKey} style={s.topBtn}>Reset Key</button>
                 </div>
             </div>
 
@@ -388,7 +445,7 @@ export default function Home() {
                     ['AGENT', 'Groq · llama-3.3-70b'],
                     ['SOURCE', 'Azure DevOps / GitHub Actions'],
                     ['STATUS', loading ? `Analyzing · ${elapsed}s` : result ? result.severity : 'Awaiting log',
-                        loading ? '#60a5fa' : result ? sevColor : '#aaa'],
+                        loading ? '#60a5fa' : result ? sevColor : '#888'],
                     ['BYOK', 'Enabled', '#4ade80'],
                     ['LINES', lineCount > 0 ? `${lineCount} lines` : '—']
                 ].map(([label, val, color]) => (
@@ -418,13 +475,8 @@ export default function Home() {
                         </div>
                     ))}
 
-                    {/* Pipeline flow animation */}
                     {(loading || result) && (
-                        <PipelineFlow
-                            activeStep={pipelineStep}
-                            done={flowDone}
-                            severity={result?.severity}
-                        />
+                        <PipelineFlow activeStep={pipelineStep} done={flowDone} severity={result?.severity} />
                     )}
 
                     <div style={{ flex: 1 }} />
@@ -469,25 +521,44 @@ export default function Home() {
                             {lineCount > 0 && <span style={s.lineCountBadge}>{lineCount} lines · {log.length} chars</span>}
                         </div>
                         <div style={s.actionRight}>
-                            <button className="clear-btn" onClick={() => { setLog(''); setResult(null); setError(''); setActiveTab('logs'); setPipelineStep(-1) }} style={s.clearBtn}>
+                            <button
+                                className="clear-btn"
+                                onClick={() => { setLog(''); setResult(null); setError(''); setActiveTab('logs'); setPipelineStep(-1) }}
+                                style={s.clearBtn}
+                            >
                                 ✕ Clear
                             </button>
-                            <button
-                                className="analyze-btn"
-                                onClick={handleAnalyze}
-                                disabled={loading || !log.trim()}
-                                style={{
-                                    ...s.analyzeBtn,
-                                    opacity: loading || !log.trim() ? 0.4 : 1,
-                                    cursor: loading || !log.trim() ? 'not-allowed' : 'pointer',
-                                    background: loading ? '#00d4a8' : '#00ffc8'
-                                }}
-                            >
-                                {loading
-                                    ? <><span style={s.spinner} /> Analyzing · {elapsed}s</>
-                                    : '⚡ Run Analysis'
-                                }
-                            </button>
+
+                            {/* Animated gradient border wrapper when log is ready */}
+                            <div style={{
+                                borderRadius: 7, padding: 1.5,
+                                background: log.trim() && !loading
+                                    ? 'linear-gradient(90deg, #00ffc8, #3b82f6, #a855f7, #00ffc8)'
+                                    : 'transparent',
+                                backgroundSize: '300% 300%',
+                                animation: log.trim() && !loading ? 'gradientRotate 2.5s ease infinite' : 'none',
+                                transition: 'all 0.3s'
+                            }}>
+                                <button
+                                    className="analyze-btn"
+                                    onClick={handleAnalyze}
+                                    disabled={loading || !log.trim()}
+                                    style={{
+                                        ...s.analyzeBtn,
+                                        opacity: !log.trim() ? 0.4 : 1,
+                                        cursor: loading || !log.trim() ? 'not-allowed' : 'pointer',
+                                        background: loading ? '#0d0d0d' : '#0a0a0a',
+                                        color: loading ? '#60a5fa' : log.trim() ? '#00ffc8' : '#555',
+                                        border: 'none',
+                                        boxShadow: log.trim() && !loading ? '0 0 20px #00ffc820' : 'none'
+                                    }}
+                                >
+                                    {loading
+                                        ? <><span style={s.spinner} /> Analyzing · {elapsed}s</>
+                                        : '⚡ Run Analysis'
+                                    }
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -640,7 +711,7 @@ const s = {
         fontFamily: "'JetBrains Mono', monospace", transition: 'all 0.2s'
     },
     analyzeBtn: {
-        background: '#00ffc8', color: '#000',
+        background: '#0a0a0a', color: '#00ffc8',
         border: 'none', borderRadius: 6, padding: '10px 28px',
         fontSize: 14, fontWeight: 700, cursor: 'pointer',
         fontFamily: "'JetBrains Mono', monospace",
@@ -649,7 +720,7 @@ const s = {
     },
     spinner: {
         display: 'inline-block', width: 12, height: 12,
-        border: '2px solid #00000030', borderTop: '2px solid #000',
+        border: '2px solid #3b82f630', borderTop: '2px solid #3b82f6',
         borderRadius: '50%', animation: 'spin 0.7s linear infinite'
     },
     tabs: {
