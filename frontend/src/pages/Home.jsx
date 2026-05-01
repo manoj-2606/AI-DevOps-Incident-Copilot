@@ -19,7 +19,7 @@ const TYPEWRITER_LINES = [
 // Tool logos as SVG paths
 const TOOL_LOGOS = {
     terraform: (
-        <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+        <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
             <path d="M12.042 7.172L20.04 11.742V20.88L12.042 16.31V7.172Z" fill="#7B42BC" />
             <path d="M21.042 11.742L29.04 7.172V16.31L21.042 20.88V11.742Z" fill="#7B42BC" opacity="0.7" />
             <path d="M2.96 2.602L10.958 7.172V16.31L2.96 11.74V2.602Z" fill="#7B42BC" opacity="0.5" />
@@ -75,7 +75,7 @@ function StatusDot({ status, idle }) {
     )
 }
 
-function PipelineFlow({ activeStep, done, severity, loading, idle }) {
+function PipelineFlow({ activeStep, done, severity, loading, idle, hasLog }) {
     const steps = ['Ingest', 'Analyze', 'Classify', 'Fix']
     const sevColor = severity ? SEV_COLOR[severity] : null
 
@@ -157,7 +157,7 @@ function PipelineFlow({ activeStep, done, severity, loading, idle }) {
                     {['Ingesting log data...', 'Running AI analysis...', 'Classifying severity...', 'Generating fix...'][Math.min(activeStep, 3)]}
                 </div>
             )}
-            {idle && <div style={pf.idleText}>Ready · Awaiting log input</div>}
+            {idle && <div style={pf.idleText}>{hasLog ? 'Log loaded · Ready to analyze' : 'Ready · Awaiting log input'}</div>}
             {idle && (
                 <div style={pf.idleCards}>
                     {[
@@ -317,7 +317,7 @@ function LogViewer({ value, onChange, scanning }) {
                 </div>
             )}
             <div ref={numRef} style={lv.nums}>
-                {(value ? lines : Array.from({ length: 20 })).map((_, i) => (
+                {(value ? lines : Array.from({ length: 8 })).map((_, i) => (
                     <div key={i} style={{ ...lv.num, color: value ? '#555' : '#222' }}>{i + 1}</div>
                 ))}
             </div>
@@ -582,6 +582,7 @@ export default function Home() {
                         severity={result?.severity}
                         loading={loading}
                         idle={isIdle}
+                        hasLog={!!log}
                     />
 
                     <div style={{ flex: 1 }} />
@@ -747,11 +748,10 @@ const s = {
     toolLogosLabel: { fontSize: 9, color: '#333', letterSpacing: 3 },
     toolLogosRow: { display: 'flex', gap: 10, alignItems: 'center' },
     toolLogo: {
-        width: 28, height: 28, display: 'flex', alignItems: 'center',
+        width: 32, height: 32, display: 'flex', alignItems: 'center',
         justifyContent: 'center', borderRadius: 6,
-        background: '#111', border: '1px solid #1e1e1e',
-        transition: 'border-color 0.2s',
-        cursor: 'default'
+        background: '#1a1a1a', border: '1px solid #333',
+        transition: 'border-color 0.2s', cursor: 'default'
     },
     main: { display: 'flex', flex: 1, overflow: 'hidden', minHeight: 0 },
     sidebar: {
@@ -785,8 +785,9 @@ const s = {
     },
     instructionRight: {
         display: 'flex', alignItems: 'center', gap: 16,
-        padding: '14px 24px', flex: 1
+        padding: '14px 24px', flex: 1, minWidth: 0
     },
+    instructionText: { fontSize: 13, color: '#aaa', lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
     instructionStep: { fontSize: 24, fontWeight: 800, color: '#3b82f6', flexShrink: 0, lineHeight: 1 },
     instructionText: { fontSize: 13, color: '#aaa', lineHeight: 1.5 },
     actionBar: {
