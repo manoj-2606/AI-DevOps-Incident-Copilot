@@ -789,7 +789,6 @@ const s = {
     },
     instructionText: { fontSize: 13, color: '#aaa', lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
     instructionStep: { fontSize: 24, fontWeight: 800, color: '#3b82f6', flexShrink: 0, lineHeight: 1 },
-    instructionText: { fontSize: 13, color: '#aaa', lineHeight: 1.5 },
     actionBar: {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         padding: '12px 20px', background: '#0d0d0d',
